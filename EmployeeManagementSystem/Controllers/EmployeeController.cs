@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace EmployeeManagementSystem.Controllers
 {
@@ -14,10 +15,9 @@ namespace EmployeeManagementSystem.Controllers
         {
             this.context = context;
         }
-        public static bool validateDepartment(Employee emp)
+        public bool validateDepartment(Employee emp)
         {
-            ApiDataDbContext context = new ApiDataDbContext();
-            Department temp = context.departments.First(x => x.DepartmentId == emp.DepartmentId);
+            Department temp = context.departments.FirstOrDefault(x => x.DepartmentId == emp.DepartmentId);
             return (temp == null) ? false : true;
         }
 
@@ -25,16 +25,15 @@ namespace EmployeeManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
-            context = new ApiDataDbContext();
             var data = await context.employees.ToListAsync();
-            return Ok(data);
+            return await Task.FromResult<OkObjectResult>(Ok(data));
         }
 
 
         [HttpGet("api/employee/{id}")]
         public async Task<IActionResult> GetEmpByIdAsync(string id)
         {
-            context = new ApiDataDbContext();
+           
             int _id = int.Parse(id);
             var employee = await context.employees.FindAsync(_id);
             
@@ -52,27 +51,16 @@ namespace EmployeeManagementSystem.Controllers
 
         public async Task<IActionResult> PostAsync([FromBody] Employee emp)
         {
-            context = new ApiDataDbContext();
-            var data = await context.employees.FirstOrDefaultAsync(x => x.EmployeeId == emp.EmployeeId);
-            if (data == null)
-            {
-
                 if (validateDepartment(emp))
                 {
-                    context.employees.Add(emp);
-                    context.SaveChanges();
-                    return Created("api/employee", emp);
+                   await context.employees.AddAsync(emp);
+                    await context.SaveChangesAsync();
+                    return await Task.FromResult<CreatedResult>(Created("api/employee", emp));
                 }
                 else
                 {
-                    return BadRequest();
+                    return await Task.FromResult<BadRequestResult>(BadRequest());
                 }
-            }
-            else
-            {
-                return BadRequest(data);
-            }
-
         }
     }
 }

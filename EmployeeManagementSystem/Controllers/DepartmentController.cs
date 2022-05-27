@@ -16,10 +16,9 @@ namespace EmployeeManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
-            context = new ApiDataDbContext();
+            
             var data = await context.departments.ToListAsync();
-            // var data = await context.departments;
-            return Ok(data);
+            return await Task.FromResult<OkObjectResult>(Ok(data));
         }
 
         [HttpPost("api/department")]
@@ -27,26 +26,26 @@ namespace EmployeeManagementSystem.Controllers
         {
             if (dept is null)
             {
-                throw new ArgumentNullException(nameof(dept));
+                return await Task.FromResult<BadRequestResult>(BadRequest());
             }
-
-            context = new ApiDataDbContext();
-            context.departments.Add(dept);
-            //await context.departments.Add(dept);
+            await context.departments.AddAsync(dept);
             await context.SaveChangesAsync();
-            return Ok(dept);
+            return await Task.FromResult<OkObjectResult>(Ok(dept));
         }
 
         [HttpGet("api/department/{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {
-            context = new ApiDataDbContext();
+           
             int _id = int.Parse(id);
-            var data = await context.departments.FirstOrDefaultAsync(d => d.DepartmentId == _id);
-            if (data == null) { return NotFound(); }
+            var data = await context.departments.FindAsync(_id);
+            if (data == null) 
+            { 
+                return await Task.FromResult<NotFoundResult>(NotFound()); 
+            }
             else
             {
-                return Ok(data);
+                return await Task.FromResult<OkObjectResult>(Ok(data));
             }
         }
     }
